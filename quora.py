@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 data=pd.read_csv('Quora/train.csv')
-size=10000
+size=100000
 data=data.tail(size)
 
 # CLEANING TEXT DATA
@@ -53,29 +53,24 @@ def embevt (word_mat,word_num,model) :
             count_w+=1
     return res
 
-word_emb=embevt(word_mat,30,model)
+word_emb=embevt(word_mat,3,model)
+
 Y = np.asarray(data.target)
 
 #FREE MEMORY
-del model
+#del model
 
 ### LETS DO LSTM MODEL
 from keras.models import Sequential
 from keras.layers import Dense,LSTM
 
 mod=Sequential()
-mod.add(LSTM(32,activation='relu',return_sequences=True,input_shape=(30,300)))
+mod.add(LSTM(32,activation='relu',return_sequences=True,input_shape=(3,300)))
+mod.add(LSTM(32,activation='relu',return_sequences=True))
 mod.add(LSTM(32,activation='relu',return_sequences=True))
 mod.add(LSTM(1,return_sequences=False))
 
-
-mod.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-mod.fit(word_emb, Y)
-
 #METRICS
-from sklearn.metrics import confusion_matrix
-confusion_matrix(Y,mod.predict_classes(word_emb))
-
 
 #CUSTUM METRICS
 import tensorflow as tf
@@ -97,4 +92,55 @@ recall = as_keras_metric(tf.metrics.recall)
 precision = as_keras_metric(tf.metrics.precision)
 mod.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy',precision])
 mod.fit(word_emb, Y)
+
+
+
+def f1_loss(y_true, y_pred):
+    """Custom f1 loss for bicategorical
+    y must be of shape where y.shape[-1] == 2
+    y[..., 0] must be the category for true
+    y[..., 1] must be the category for false
+    """
+    true_truth = K.dot(y_true, K.constant([1., 0.], dtype='float32', shape=(2, 1)))
+    true_false = K.dot(y_true, K.constant([0., 1.], dtype='float32', shape=(2, 1)))
+
+    y_false = K.constant(1., dtype='float32') - y_true
+
+    fake_truth = K.dot(y_false, K.constant([1., 0.], dtype='float32', shape=(2, 1)))
+    fake_false = K.dot(y_false, K.constant([0., 1.], dtype='float32', shape=(2, 1)))
+
+    TP_temp = K.sum(true_truth * y_pred)
+    FP_temp = K.sum(fake_truth * y_pred)
+    FN_temp = K.sum(fake_false * y_pred)
+
+    loss = (FP_temp + FN_temp) / (2 * TP_temp + FP_temp + FN_temp + K.epsilon())
+
+    return loss
+
+mod.compile(optimizer='adam', loss=f1_loss, metrics=['accuracy',precision])
+mod.fit(word_emb, Y)
+
+
+
+#CONFUSION matrix
+from sklearn.metrics import confusion_matrix
 confusion_matrix(Y,mod.predict_classes(word_emb))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+################TEST VALUE########################
+submission=pd.read_csv('Quora/sample_submission.csv')
+testcsv=pd.read_csv('Quora/test.csv')
+
+test_wordmat=wordlist(testcsv,len(testcsv))
