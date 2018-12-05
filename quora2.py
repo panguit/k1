@@ -90,13 +90,13 @@ y_train=y_train.reshape( (len(y_train),1))
 #### MODELLING
 from keras.models import Sequential
 from keras.layers import Dense,LSTM,CuDNNLSTM,BatchNormalization
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix,accuracy_score
 
 mod=Sequential()
 #mod.add( BatchNormalization())
 mod.add(LSTM(128, input_shape= x_train.shape[1:],return_sequences=  True,activation='relu'))
 mod.add( BatchNormalization())
-mod.add(LSTM(32,activation='relu',return_sequences=True))
+#mod.add(LSTM(32,activation='relu',return_sequences=True))
 mod.add(LSTM(32,activation='relu'))
 mod.add(Dense(1,activation='sigmoid'))
 
@@ -115,8 +115,28 @@ confusion_matrix(y_train,mod.predict_classes(x_train))
 x_test = embed[(len(embed)-1000):len(embed)]
 y_test = Y[(len(embed)-1000):len(embed)]
 y_test.mean()
+y_pred = mod.predict_classes(x_test)
+confusion_matrix(y_test,y_pred)
+accuracy_score(y_test,y_pred)
 
-confusion_matrix(y_test,mod.predict_classes(x_test))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #TEST MODEL ON MNIST SET
 import tensorflow as tf

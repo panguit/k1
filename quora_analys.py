@@ -10,22 +10,22 @@ import pickle
 data=pd.read_csv('Quora/train.csv')
 text=data.question_text
 text=np.asarray(text)
-#model = gensim.models.KeyedVectors.load_word2vec_format('embedding/GoogleNews-vectors-negative300.bin', binary=True)
+model = gensim.models.KeyedVectors.load_word2vec_format('embedding/GoogleNews-vectors-negative300.bin', binary=True)
 
 def wordlist (text,model):
     #INPUT : TEXT AND THE EMBEDDING MODEL
     #OUTPUT : LIST OF LIST SENTENCExWORD AND LENGTH OF SENTENCES
     word_list=[]
-    sent_len=[]
+    #sent_len=[]
     for w in text:
         word = re.sub('\W+',' ', w)
         word = word.split()
         word = [w for w in word if w in model.wv]
-        sent_len.append(len(word ))
+        #sent_len.append(len(word ))
         word_list.append(word)
-    return (word_list,sent_len)
+    return word_list
 
-word_list,  = wordlist(text,model)
+word_list = wordlist(text,model)
 
 #SAVE WORD_LIST AS FILE
 
@@ -50,7 +50,7 @@ def wordlist2sentences (word_list):
 sentences = wordlist2sentences((word_list))
 common_words = pd.Series(sentences).str.split(expand=True).stack().value_counts()
 
-plt.plot(common_words.values[0:500])
+#plt.plot(common_words.values[0:500])
 
 # DELETE 100 MOST COMMON WORDS
 
@@ -64,6 +64,7 @@ def filter_wordlist(word_list,filterword):
 
 word_list_filtered=filter_wordlist(word_list,filterword)
 
+
 cleaned_data = {
     'qid' : data.qid,
     'word_list' : word_list_filtered,
@@ -74,3 +75,8 @@ cleaned_data = {
 with open('cleaned_data.pkl', 'wb') as f:  # Python 3: open(..., 'wb')
     pickle.dump(cleaned_data, f)
 
+
+#####SAMP DATA
+
+with open('word_list.pkl','rb') as f:
+    word_list =pickle.load(f)
